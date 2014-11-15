@@ -7,14 +7,14 @@ import (
 )
 
 func TestPropertyName(t *testing.T) {
-	p := newProperty("property.name")
+	p := newDynamicProperty("property.name")
 	assert.Equal(t, "property.name", p.Name())
 }
 
 func TestPropertySetValue(t *testing.T) {
-	p := newProperty("")
+	p := newDynamicProperty("")
 
-	// Default is returned is no value is set.
+	// Default is returned if no value is set.
 	assert.Equal(t, "abc", p.stringValueWithDefault("abc"))
 	assert.Equal(t, true, p.boolValueWithDefault(true))
 	assert.Equal(t, 123, p.intValueWithDefault(123))
@@ -31,7 +31,7 @@ func TestPropertySetValue(t *testing.T) {
 }
 
 func TestPropertySetValueSameValue(t *testing.T) {
-	p := newProperty("")
+	p := newDynamicProperty("")
 	assert.True(t, p.LastTimeChanged().IsZero())
 	p.setValue("abc")
 	changedTime := p.LastTimeChanged()
@@ -42,7 +42,7 @@ func TestPropertySetValueSameValue(t *testing.T) {
 }
 
 func TestPropertySetValueBool(t *testing.T) {
-	p := newProperty("")
+	p := newDynamicProperty("")
 
 	p.setValue("false")
 	assert.Equal(t, false, p.boolValueWithDefault(true))
@@ -51,7 +51,7 @@ func TestPropertySetValueBool(t *testing.T) {
 }
 
 func TestPropertySetValueInt(t *testing.T) {
-	p := newProperty("")
+	p := newDynamicProperty("")
 
 	p.setValue("255")
 	assert.Equal(t, 255, p.intValueWithDefault(0))
@@ -62,7 +62,7 @@ func TestPropertySetValueInt(t *testing.T) {
 }
 
 func TestPropertyClear(t *testing.T) {
-	p := newProperty("")
+	p := newDynamicProperty("")
 	p.setValue("abc")
 	assert.Equal(t, "abc", p.stringValueWithDefault(""))
 	p.clear()

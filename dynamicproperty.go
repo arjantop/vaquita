@@ -12,7 +12,7 @@ var (
 	InvalidBoolValue = errors.New("invalid boolean value")
 )
 
-type Property struct {
+type DynamicProperty struct {
 	name  string
 	value *sharedString
 
@@ -21,9 +21,9 @@ type Property struct {
 	parsedIntProperty    parsedProperty
 }
 
-func newProperty(name string) *Property {
+func newDynamicProperty(name string) *DynamicProperty {
 	s := newSharedString()
-	return &Property{
+	return &DynamicProperty{
 		name:  name,
 		value: s,
 
@@ -46,27 +46,27 @@ func newProperty(name string) *Property {
 	}
 }
 
-func (p *Property) Name() string {
+func (p *DynamicProperty) Name() string {
 	return p.name
 }
 
-func (p *Property) LastTimeChanged() time.Time {
+func (p *DynamicProperty) LastTimeChanged() time.Time {
 	return p.value.lastTimeChanged()
 }
 
-func (p *Property) stringValueWithDefault(d string) string {
+func (p *DynamicProperty) stringValueWithDefault(d string) string {
 	return p.parsedStringProperty.valueWithDefault(d).(string)
 }
 
-func (p *Property) boolValueWithDefault(d bool) bool {
+func (p *DynamicProperty) boolValueWithDefault(d bool) bool {
 	return p.parsedBoolProperty.valueWithDefault(d).(bool)
 }
 
-func (p *Property) intValueWithDefault(d int) int {
+func (p *DynamicProperty) intValueWithDefault(d int) int {
 	return p.parsedIntProperty.valueWithDefault(d).(int)
 }
 
-func (p *Property) setValue(v string) {
+func (p *DynamicProperty) setValue(v string) {
 	p.value.withValue(func(s **string) {
 		if *s != nil && **s == v {
 			// If the value did not change do nothing.
@@ -77,14 +77,14 @@ func (p *Property) setValue(v string) {
 	})
 }
 
-func (p *Property) clear() {
+func (p *DynamicProperty) clear() {
 	p.value.withValue(func(s **string) {
 		*s = nil
 		p.clearParsedProperties()
 	})
 }
 
-func (p *Property) clearParsedProperties() {
+func (p *DynamicProperty) clearParsedProperties() {
 	p.parsedStringProperty.clear()
 	p.parsedBoolProperty.clear()
 	p.parsedIntProperty.clear()
