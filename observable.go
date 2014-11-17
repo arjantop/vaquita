@@ -1,5 +1,7 @@
 package vaquita
 
+import "errors"
+
 type Event int
 
 const (
@@ -41,6 +43,21 @@ func (e *ChangeEvent) Value() string {
 
 type Callback func(e *ChangeEvent)
 
+type subscription struct {
+	id    int
+	owner Observable
+}
+
+func newSubscription(id int, owner Observable) subscription {
+	return subscription{
+		id:    id,
+		owner: owner,
+	}
+}
+
+var InvalidSubscribtion = errors.New("invalid subscription")
+
 type Observable interface {
-	Subscribe(Callback)
+	Subscribe(Callback) subscription
+	Unsubscribe(subscription) error
 }

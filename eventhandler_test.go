@@ -41,3 +41,24 @@ func assertEventEquals(
 	assert.Equal(t, ev, event.Event())
 	assert.True(t, vaquita.CompareIdentity(c, event.Source()))
 }
+
+func TestEventHandlerUnsubscribe(t *testing.T) {
+	h := vaquita.NewEventHandler()
+	var event *vaquita.ChangeEvent
+	f := func(e *vaquita.ChangeEvent) {
+		event = e
+	}
+	s := h.Subscribe(f)
+	assert.NoError(t, h.Unsubscribe(s))
+	h.Notify(vaquita.NewChangeEvent(nil, vaquita.PropertySet, "", ""))
+	assert.Nil(t, event)
+}
+
+func TestEventHandlerUnsubscribeInOtherHandler(t *testing.T) {
+	h := vaquita.NewEventHandler()
+	h2 := vaquita.NewEventHandler()
+	s := h.Subscribe(func(e *vaquita.ChangeEvent) {})
+	s2 := h2.Subscribe(func(e *vaquita.ChangeEvent) {})
+	assert.NotEqual(t, s, s2)
+	assert.Equal(t, vaquita.InvalidSubscribtion, h2.Unsubscribe(s))
+}

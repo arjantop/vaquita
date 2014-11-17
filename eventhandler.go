@@ -3,14 +3,16 @@ package vaquita
 import "sync"
 
 type EventHandler struct {
-	subscribers []Callback
-	lock        *sync.RWMutex
+	subscribers    map[subscription]Callback
+	lock           *sync.RWMutex
+	subscriptionId int
 }
 
 func NewEventHandler() *EventHandler {
 	return &EventHandler{
-		subscribers: make([]Callback, 0),
-		lock:        new(sync.RWMutex),
+		subscribers:    make(map[subscription]Callback),
+		lock:           new(sync.RWMutex),
+		subscriptionId: 0,
 	}
 }
 
@@ -22,8 +24,21 @@ func (h *EventHandler) Notify(e *ChangeEvent) {
 	}
 }
 
-func (h *EventHandler) Subscribe(f Callback) {
+func (h *EventHandler) Subscribe(f Callback) subscription {
 	h.lock.Lock()
 	defer h.lock.Unlock()
-	h.subscribers = append(h.subscribers, f)
+	s := newSubscription(h.subscriptionId, h)
+	h.subscribers[s] = f
+	h.subscriptionId++
+	return s
+}
+
+func (h *EventHandler) Unsubscribe(s subscription) error {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	if _, ok := h.subscribers[s]; !ok {
+		return InvalidSubscribtion
+	}
+	delete(h.subscribers, s)
+	return nil
 }
