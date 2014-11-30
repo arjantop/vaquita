@@ -27,18 +27,23 @@ func NewMapConfig(values map[string]string) *MapConfig {
 	return cfg
 }
 
-func (c *MapConfig) SetProperty(name string, value string) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	hasProperty := c.hasProperty(name)
-	c.values[name] = value
+func (c *MapConfig) SetProperty(name, value string) {
+	changed := c.setProperty(name, value)
 	var event Event
-	if hasProperty {
+	if changed {
 		event = PropertyChanged
 	} else {
 		event = PropertySet
 	}
 	c.Notify(NewChangeEvent(c, event, name, value))
+}
+
+func (c *MapConfig) setProperty(name, value string) bool {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	hasProperty := c.hasProperty(name)
+	c.values[name] = value
+	return hasProperty
 }
 
 func (c *MapConfig) HasProperty(name string) bool {
@@ -60,11 +65,16 @@ func (c *MapConfig) GetProperty(name string) (string, bool) {
 }
 
 func (c *MapConfig) RemoveProperty(name string) {
+	removed := c.removeProperty(name)
+	if removed {
+		c.Notify(NewChangeEvent(c, PropertyRemoved, name, ""))
+	}
+}
+
+func (c *MapConfig) removeProperty(name string) bool {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	hasProperty := c.hasProperty(name)
 	delete(c.values, name)
-	if hasProperty {
-		c.Notify(NewChangeEvent(c, PropertyRemoved, name, ""))
-	}
+	return hasProperty
 }

@@ -108,3 +108,73 @@ func assertPropertyValue(t *testing.T, c vaquita.Config, name string, expected s
 	assert.True(t, ok)
 	assert.Equal(t, expected, v)
 }
+
+func TestLayeredConfigDynamicConfigEvents(t *testing.T) {
+	c := vaquita.NewLayeredConfig()
+	AssertDynamicConfigEvents(t, c)
+}
+
+func TestLayeredConfigDynamicConfigEventsMultipleLayers(t *testing.T) {
+	c := vaquita.NewLayeredConfig()
+
+	c.SetProperty("p", "v")
+
+	c2 := vaquita.NewEmptyMapConfig()
+	c.Add(c2)
+
+	c2.SetProperty("p", "v2")
+
+	var eventCount int
+
+	// Removing property in non-primary config.
+	s := c.Subscribe(func(e *vaquita.ChangeEvent) {
+		eventCount++
+	})
+	c.RemoveProperty("p")
+	assert.Equal(t, 0, eventCount)
+	c.Unsubscribe(s)
+
+	// Setting value of non-primary config.
+	s = c.Subscribe(func(e *vaquita.ChangeEvent) {
+		eventCount++
+	})
+	c.SetProperty("p", "v3")
+	assert.Equal(t, 0, eventCount)
+	c.Unsubscribe(s)
+
+	// Setting a value of primary config.
+	s = c.Subscribe(func(e *vaquita.ChangeEvent) {
+		eventCount++
+		assert.Equal(t, "p", e.Name())
+		assert.Equal(t, "v4", e.Value())
+		assert.Equal(t, vaquita.PropertyChanged, e.Event())
+		assert.Equal(t, c, e.Source())
+	})
+	c2.SetProperty("p", "v4")
+	assert.Equal(t, 1, eventCount)
+	c.Unsubscribe(s)
+
+	// Removing a property from primary config.
+	s = c.Subscribe(func(e *vaquita.ChangeEvent) {
+		eventCount++
+		assert.Equal(t, "p", e.Name())
+		assert.Equal(t, "v3", e.Value())
+		assert.Equal(t, vaquita.PropertyChanged, e.Event())
+		assert.Equal(t, c, e.Source())
+	})
+	c2.RemoveProperty("p")
+	assert.Equal(t, 2, eventCount)
+	c.Unsubscribe(s)
+
+	// Removing a property from primary config.
+	s = c.Subscribe(func(e *vaquita.ChangeEvent) {
+		eventCount++
+		assert.Equal(t, "p", e.Name())
+		assert.Equal(t, "", e.Value())
+		assert.Equal(t, vaquita.PropertyRemoved, e.Event())
+		assert.Equal(t, c, e.Source())
+	})
+	c.RemoveProperty("p")
+	assert.Equal(t, 3, eventCount)
+	c.Unsubscribe(s)
+}
