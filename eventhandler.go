@@ -28,6 +28,7 @@ func (h *EventHandler) Subscribe(f Callback) subscription {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	s := newSubscription(h.subscriptionId, h)
+
 	h.subscribers[s] = f
 	h.subscriptionId++
 	return s
