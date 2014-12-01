@@ -4,15 +4,29 @@ import "sync"
 
 type PropertyFactory struct {
 	properties map[string]*DynamicProperty
-	lock       *sync.Mutex
-	config     Config
+	lock       *sync.RWMutex
+	config     DynamicConfig
 }
 
-func NewPropertyFactory(owner Config) *PropertyFactory {
-	return &PropertyFactory{
+func NewPropertyFactory(owner DynamicConfig) *PropertyFactory {
+	factory := &PropertyFactory{
 		properties: make(map[string]*DynamicProperty),
-		lock:       new(sync.Mutex),
+		lock:       new(sync.RWMutex),
 		config:     owner,
+	}
+	owner.Subscribe(factory.eventHandler)
+	return factory
+}
+
+func (f *PropertyFactory) eventHandler(e *ChangeEvent) {
+	f.lock.RLock()
+	defer f.lock.RUnlock()
+	if p, ok := f.properties[e.Name()]; ok {
+		if e.Event() == PropertyRemoved {
+			p.clear()
+		} else {
+			p.setValue(e.Value())
+		}
 	}
 }
 
@@ -23,8 +37,6 @@ func (f *PropertyFactory) GetDynamicStringProperty(name string, defaultValue str
 	if !ok {
 		p = newDynamicProperty(name)
 		if v, ok := f.config.GetProperty(name); ok {
-			// If there is a value in the config that owns this property we
-			// assign it before returning the property.
 			p.setValue(v)
 		}
 		f.properties[name] = p
