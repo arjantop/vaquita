@@ -30,7 +30,22 @@ func (f *PropertyFactory) eventHandler(e *ChangeEvent) {
 	}
 }
 
-func (f *PropertyFactory) GetDynamicStringProperty(name string, defaultValue string) *DynamicStringProperty {
+func (f *PropertyFactory) GetDynamicStringProperty(name, defaultValue string) *DynamicStringProperty {
+	p := f.getProperty(name)
+	return newDynamicStringProperty(p, defaultValue)
+}
+
+func (f *PropertyFactory) GetDynamicBoolProperty(name string, defaultValue bool) *DynamicBoolProperty {
+	p := f.getProperty(name)
+	return newDynamicBoolProperty(p, defaultValue)
+}
+
+func (f *PropertyFactory) GetDynamicIntProperty(name string, defaultValue int) *DynamicIntProperty {
+	p := f.getProperty(name)
+	return newDynamicIntProperty(p, defaultValue)
+}
+
+func (f *PropertyFactory) getProperty(name string) *DynamicProperty {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	p, ok := f.properties[name]
@@ -41,25 +56,5 @@ func (f *PropertyFactory) GetDynamicStringProperty(name string, defaultValue str
 		}
 		f.properties[name] = p
 	}
-	return newDynamicStringProperty(p, defaultValue)
-}
-
-type DynamicStringProperty struct {
-	defaultValue string
-	property     *DynamicProperty
-}
-
-func newDynamicStringProperty(p *DynamicProperty, defaultValue string) *DynamicStringProperty {
-	return &DynamicStringProperty{
-		defaultValue: defaultValue,
-		property:     p,
-	}
-}
-
-func (p *DynamicStringProperty) Name() string {
-	return p.property.Name()
-}
-
-func (p *DynamicStringProperty) Get() string {
-	return p.property.stringValueWithDefault(p.defaultValue)
+	return p
 }
