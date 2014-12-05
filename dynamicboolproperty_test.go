@@ -9,7 +9,7 @@ import (
 
 func TestDynamicBoolPropertyDefaultValue(t *testing.T) {
 	f := vaquita.NewPropertyFactory(vaquita.NewEmptyMapConfig())
-	p := f.GetDynamicBoolProperty("p", false)
+	p := f.GetBoolProperty("p", false)
 	assert.Equal(t, "p", p.Name())
 
 	assert.Equal(t, false, p.Get())
@@ -19,7 +19,7 @@ func TestDynamicBoolPropertyGet(t *testing.T) {
 	c := vaquita.NewEmptyMapConfig()
 	f := vaquita.NewPropertyFactory(c)
 
-	p := f.GetDynamicBoolProperty("p", true)
+	p := f.GetBoolProperty("p", true)
 	assert.Equal(t, true, p.Get())
 
 	c.SetProperty("p", "false")
@@ -32,11 +32,11 @@ func TestDynamicBoolPropertyGet(t *testing.T) {
 	assert.Equal(t, true, p.Get())
 }
 
-func TestDynamicBoolInvalidValue(t *testing.T) {
+func TestDynamicBoolPropertyInvalidValue(t *testing.T) {
 	c := vaquita.NewEmptyMapConfig()
 	f := vaquita.NewPropertyFactory(c)
 
-	p := f.GetDynamicBoolProperty("p", true)
+	p := f.GetBoolProperty("p", true)
 
 	c.SetProperty("p", "fals")
 	assert.Equal(t, true, p.Get(), "The value is still the default")

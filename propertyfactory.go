@@ -30,17 +30,17 @@ func (f *PropertyFactory) eventHandler(e *ChangeEvent) {
 	}
 }
 
-func (f *PropertyFactory) GetDynamicStringProperty(name, defaultValue string) *DynamicStringProperty {
+func (f *PropertyFactory) GetStringProperty(name, defaultValue string) StringProperty {
 	p := f.getProperty(name)
 	return newDynamicStringProperty(p, defaultValue)
 }
 
-func (f *PropertyFactory) GetDynamicBoolProperty(name string, defaultValue bool) *DynamicBoolProperty {
+func (f *PropertyFactory) GetBoolProperty(name string, defaultValue bool) BoolProperty {
 	p := f.getProperty(name)
 	return newDynamicBoolProperty(p, defaultValue)
 }
 
-func (f *PropertyFactory) GetDynamicIntProperty(name string, defaultValue int) *DynamicIntProperty {
+func (f *PropertyFactory) GetIntProperty(name string, defaultValue int) IntProperty {
 	p := f.getProperty(name)
 	return newDynamicIntProperty(p, defaultValue)
 }

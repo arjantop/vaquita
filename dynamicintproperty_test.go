@@ -9,7 +9,7 @@ import (
 
 func TestDynamicIntPropertyDefaultValue(t *testing.T) {
 	f := vaquita.NewPropertyFactory(vaquita.NewEmptyMapConfig())
-	p := f.GetDynamicIntProperty("p", 1337)
+	p := f.GetIntProperty("p", 1337)
 	assert.Equal(t, "p", p.Name())
 
 	assert.Equal(t, 1337, p.Get())
@@ -21,7 +21,7 @@ func TestDynamicIntPropertyGet(t *testing.T) {
 
 	c.SetProperty("p", "123")
 
-	p := f.GetDynamicIntProperty("p", 1)
+	p := f.GetIntProperty("p", 1)
 	assert.Equal(t, 123, p.Get())
 
 	c.SetProperty("p", "-10")
@@ -38,7 +38,7 @@ func TestDynamicIntPropertyInvalidValue(t *testing.T) {
 	c := vaquita.NewEmptyMapConfig()
 	f := vaquita.NewPropertyFactory(c)
 
-	p := f.GetDynamicIntProperty("p", 0)
+	p := f.GetIntProperty("p", 0)
 
 	c.SetProperty("p", "6.6")
 	assert.Equal(t, 0, p.Get())

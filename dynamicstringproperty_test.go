@@ -9,7 +9,7 @@ import (
 
 func TestDynamicStringPropertyDefaultValue(t *testing.T) {
 	f := vaquita.NewPropertyFactory(vaquita.NewEmptyMapConfig())
-	p := f.GetDynamicStringProperty("p", "d")
+	p := f.GetStringProperty("p", "d")
 	assert.Equal(t, "p", p.Name())
 
 	assert.Equal(t, "d", p.Get())
@@ -21,7 +21,7 @@ func TestDynamicStringPropertyGet(t *testing.T) {
 
 	c.SetProperty("p", "v")
 
-	p := f.GetDynamicStringProperty("p", "d")
+	p := f.GetStringProperty("p", "d")
 	assert.Equal(t, "v", p.Get())
 
 	c.SetProperty("p", "v1")
