@@ -1,6 +1,9 @@
 package vaquita
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type PropertyFactory struct {
 	properties map[string]*DynamicProperty
@@ -43,6 +46,11 @@ func (f *PropertyFactory) GetBoolProperty(name string, defaultValue bool) BoolPr
 func (f *PropertyFactory) GetIntProperty(name string, defaultValue int) IntProperty {
 	p := f.getProperty(name)
 	return newDynamicIntProperty(p, defaultValue)
+}
+
+func (f *PropertyFactory) GetDurationProperty(name string, defaultValue time.Duration, unit time.Duration) DurationProperty {
+	p := f.getProperty(name)
+	return newDynamicDurationProperty(p, defaultValue, unit)
 }
 
 func (f *PropertyFactory) getProperty(name string) *DynamicProperty {

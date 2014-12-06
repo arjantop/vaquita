@@ -1,5 +1,7 @@
 package vaquita
 
+import "time"
+
 type Property interface {
 	Name() string
 }
@@ -16,5 +18,10 @@ type IntProperty interface {
 
 type BoolProperty interface {
 	Get() bool
+	Property
+}
+
+type DurationProperty interface {
+	Get() time.Duration
 	Property
 }
