@@ -23,15 +23,19 @@ func TestDynamicIntPropertyGet(t *testing.T) {
 
 	p := f.GetIntProperty("p", 1)
 	assert.Equal(t, 123, p.Get())
+	assert.True(t, p.HasValue())
 
 	c.SetProperty("p", "-10")
 	assert.Equal(t, -10, p.Get())
+	assert.True(t, p.HasValue())
 
 	c.SetProperty("p", "9000")
 	assert.Equal(t, 9000, p.Get())
+	assert.True(t, p.HasValue())
 
 	c.RemoveProperty("p")
 	assert.Equal(t, 1, p.Get())
+	assert.False(t, p.HasValue())
 }
 
 func TestDynamicIntPropertyInvalidValue(t *testing.T) {
@@ -48,4 +52,25 @@ func TestDynamicIntPropertyInvalidValue(t *testing.T) {
 
 	c.SetProperty("p", "10")
 	assert.Equal(t, 10, p.Get())
+}
+
+func TestChainedIntProperty(t *testing.T) {
+	c := vaquita.NewEmptyMapConfig()
+	f := vaquita.NewPropertyFactory(c)
+
+	p := vaquita.NewChainedIntProperty(f, "a", f.GetIntProperty("b", 1))
+
+	assert.Equal(t, 1, p.Get())
+	assert.Equal(t, "b", p.Name())
+	assert.False(t, p.HasValue())
+
+	c.SetProperty("b", "2")
+	assert.Equal(t, 2, p.Get())
+	assert.Equal(t, "b", p.Name())
+	assert.True(t, p.HasValue())
+
+	c.SetProperty("a", "3")
+	assert.Equal(t, 3, p.Get())
+	assert.Equal(t, "a", p.Name())
+	assert.True(t, p.HasValue())
 }

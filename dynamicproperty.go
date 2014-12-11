@@ -27,19 +27,19 @@ func newDynamicProperty(name string) *DynamicProperty {
 		name:  name,
 		value: s,
 
-		parsedStringProperty: newParsedProperty(s, func(v string) (interface{}, error) {
+		parsedStringProperty: newParsedProperty(s, "", func(v string) (interface{}, error) {
 			return v, nil
 		}),
-		parsedBoolProperty: newParsedProperty(s, func(v string) (interface{}, error) {
+		parsedBoolProperty: newParsedProperty(s, false, func(v string) (interface{}, error) {
 			if v == "true" {
 				return true, nil
 			} else if v == "false" {
 				return false, nil
 			} else {
-				return nil, InvalidBoolValue
+				return false, InvalidBoolValue
 			}
 		}),
-		parsedIntProperty: newParsedProperty(s, func(v string) (interface{}, error) {
+		parsedIntProperty: newParsedProperty(s, 0, func(v string) (interface{}, error) {
 			r, err := strconv.ParseInt(v, 0, 0)
 			return int(r), err
 		}),
@@ -54,12 +54,27 @@ func (p *DynamicProperty) LastTimeChanged() time.Time {
 	return p.value.lastTimeChanged()
 }
 
+func (p *DynamicProperty) stringValue() (string, error) {
+	r, err := p.parsedStringProperty.value()
+	return r.(string), err
+}
+
 func (p *DynamicProperty) stringValueWithDefault(d string) string {
 	return p.parsedStringProperty.valueWithDefault(d).(string)
 }
 
+func (p *DynamicProperty) boolValue() (bool, error) {
+	r, err := p.parsedBoolProperty.value()
+	return r.(bool), err
+}
+
 func (p *DynamicProperty) boolValueWithDefault(d bool) bool {
 	return p.parsedBoolProperty.valueWithDefault(d).(bool)
+}
+
+func (p *DynamicProperty) intValue() (int, error) {
+	r, err := p.parsedIntProperty.value()
+	return r.(int), err
 }
 
 func (p *DynamicProperty) intValueWithDefault(d int) int {
@@ -91,19 +106,22 @@ func (p *DynamicProperty) clearParsedProperties() {
 }
 
 type parsedProperty struct {
-	stringValue *sharedString
-	parsed      bool
-	parsedValue interface{}
-	err         error
-	parse       func(string) (interface{}, error)
-	lock        *sync.Mutex
+	stringValue  *sharedString
+	parsed       bool
+	defaultValue interface{}
+	parsedValue  interface{}
+	err          error
+	parse        func(string) (interface{}, error)
+	lock         *sync.Mutex
 }
 
-func newParsedProperty(v *sharedString, parse func(string) (interface{}, error)) parsedProperty {
+func newParsedProperty(v *sharedString, def interface{}, parse func(string) (interface{}, error)) parsedProperty {
 	return parsedProperty{
-		stringValue: v,
-		parse:       parse,
-		lock:        new(sync.Mutex),
+		stringValue:  v,
+		defaultValue: def,
+		parsedValue:  def,
+		parse:        parse,
+		lock:         new(sync.Mutex),
 	}
 }
 
@@ -115,7 +133,7 @@ func (p *parsedProperty) value() (interface{}, error) {
 			p.parsedValue, p.err = p.parse(*s)
 			p.parsed = true
 		} else {
-			return nil, NoValue
+			return p.parsedValue, NoValue
 		}
 	}
 	return p.parsedValue, p.err
@@ -133,7 +151,7 @@ func (p *parsedProperty) clear() {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	p.parsed = false
-	p.parsedValue = nil
+	p.parsedValue = p.defaultValue
 	p.err = nil
 }
 

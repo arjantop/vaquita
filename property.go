@@ -4,6 +4,7 @@ import "time"
 
 type Property interface {
 	Name() string
+	HasValue() bool
 }
 
 type StringProperty interface {
