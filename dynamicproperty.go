@@ -16,9 +16,8 @@ type DynamicProperty struct {
 	name  string
 	value *sharedString
 
-	parsedStringProperty parsedProperty
-	parsedBoolProperty   parsedProperty
-	parsedIntProperty    parsedProperty
+	parsedBoolProperty parsedBoolProperty
+	parsedIntProperty  parsedIntProperty
 }
 
 func newDynamicProperty(name string) *DynamicProperty {
@@ -27,22 +26,8 @@ func newDynamicProperty(name string) *DynamicProperty {
 		name:  name,
 		value: s,
 
-		parsedStringProperty: newParsedProperty(s, "", func(v string) (interface{}, error) {
-			return v, nil
-		}),
-		parsedBoolProperty: newParsedProperty(s, false, func(v string) (interface{}, error) {
-			if v == "true" {
-				return true, nil
-			} else if v == "false" {
-				return false, nil
-			} else {
-				return false, InvalidBoolValue
-			}
-		}),
-		parsedIntProperty: newParsedProperty(s, 0, func(v string) (interface{}, error) {
-			r, err := strconv.ParseInt(v, 0, 0)
-			return int(r), err
-		}),
+		parsedBoolProperty: newParsedBoolProperty(s, false),
+		parsedIntProperty:  newParsedIntProperty(s, 0),
 	}
 }
 
@@ -55,30 +40,35 @@ func (p *DynamicProperty) LastTimeChanged() time.Time {
 }
 
 func (p *DynamicProperty) stringValue() (string, error) {
-	r, err := p.parsedStringProperty.value()
-	return r.(string), err
+	r := p.value.get()
+	if r == nil {
+		return "", NoValue
+	}
+	return *r, nil
 }
 
 func (p *DynamicProperty) stringValueWithDefault(d string) string {
-	return p.parsedStringProperty.valueWithDefault(d).(string)
+	r := p.value.get()
+	if r == nil {
+		return d
+	}
+	return *r
 }
 
 func (p *DynamicProperty) boolValue() (bool, error) {
-	r, err := p.parsedBoolProperty.value()
-	return r.(bool), err
+	return p.parsedBoolProperty.value()
 }
 
 func (p *DynamicProperty) boolValueWithDefault(d bool) bool {
-	return p.parsedBoolProperty.valueWithDefault(d).(bool)
+	return p.parsedBoolProperty.valueWithDefault(d)
 }
 
 func (p *DynamicProperty) intValue() (int, error) {
-	r, err := p.parsedIntProperty.value()
-	return r.(int), err
+	return p.parsedIntProperty.value()
 }
 
 func (p *DynamicProperty) intValueWithDefault(d int) int {
-	return p.parsedIntProperty.valueWithDefault(d).(int)
+	return p.parsedIntProperty.valueWithDefault(d)
 }
 
 func (p *DynamicProperty) setValue(v string) {
@@ -100,37 +90,40 @@ func (p *DynamicProperty) clear() {
 }
 
 func (p *DynamicProperty) clearParsedProperties() {
-	p.parsedStringProperty.clear()
 	p.parsedBoolProperty.clear()
 	p.parsedIntProperty.clear()
 }
 
-type parsedProperty struct {
+type parsedBoolProperty struct {
 	stringValue  *sharedString
 	parsed       bool
-	defaultValue interface{}
-	parsedValue  interface{}
+	defaultValue bool
+	parsedValue  bool
 	err          error
-	parse        func(string) (interface{}, error)
 	lock         *sync.Mutex
 }
 
-func newParsedProperty(v *sharedString, def interface{}, parse func(string) (interface{}, error)) parsedProperty {
-	return parsedProperty{
+func newParsedBoolProperty(v *sharedString, def bool) parsedBoolProperty {
+	return parsedBoolProperty{
 		stringValue:  v,
 		defaultValue: def,
 		parsedValue:  def,
-		parse:        parse,
 		lock:         new(sync.Mutex),
 	}
 }
 
-func (p *parsedProperty) value() (interface{}, error) {
+func (p *parsedBoolProperty) value() (bool, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	if !p.parsed {
 		if s := p.stringValue.get(); s != nil {
-			p.parsedValue, p.err = p.parse(*s)
+			if *s == "true" {
+				p.parsedValue = true
+			} else if *s == "false" {
+				p.parsedValue = false
+			} else {
+				p.err = InvalidBoolValue
+			}
 			p.parsed = true
 		} else {
 			return p.parsedValue, NoValue
@@ -139,7 +132,7 @@ func (p *parsedProperty) value() (interface{}, error) {
 	return p.parsedValue, p.err
 }
 
-func (p *parsedProperty) valueWithDefault(d interface{}) interface{} {
+func (p *parsedBoolProperty) valueWithDefault(d bool) bool {
 	v, err := p.value()
 	if err != nil {
 		return d
@@ -147,7 +140,57 @@ func (p *parsedProperty) valueWithDefault(d interface{}) interface{} {
 	return v
 }
 
-func (p *parsedProperty) clear() {
+func (p *parsedBoolProperty) clear() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	p.parsed = false
+	p.parsedValue = p.defaultValue
+	p.err = nil
+}
+
+type parsedIntProperty struct {
+	stringValue  *sharedString
+	parsed       bool
+	defaultValue int
+	parsedValue  int
+	err          error
+	lock         *sync.Mutex
+}
+
+func newParsedIntProperty(v *sharedString, def int) parsedIntProperty {
+	return parsedIntProperty{
+		stringValue:  v,
+		defaultValue: def,
+		parsedValue:  def,
+		lock:         new(sync.Mutex),
+	}
+}
+
+func (p *parsedIntProperty) value() (int, error) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if !p.parsed {
+		if s := p.stringValue.get(); s != nil {
+			r, err := strconv.ParseInt(*s, 0, 0)
+			p.parsedValue = int(r)
+			p.err = err
+			p.parsed = true
+		} else {
+			return p.parsedValue, NoValue
+		}
+	}
+	return p.parsedValue, p.err
+}
+
+func (p *parsedIntProperty) valueWithDefault(d int) int {
+	v, err := p.value()
+	if err != nil {
+		return d
+	}
+	return v
+}
+
+func (p *parsedIntProperty) clear() {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	p.parsed = false

@@ -101,19 +101,19 @@ func (c *LayeredConfig) RemoveProperty(name string) {
 	c.defaultConfig.RemoveProperty(name)
 }
 
-func (c *LayeredConfig) Add(cfg DynamicConfig) uint {
+func (c *LayeredConfig) Add(cfg DynamicConfig) int {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	return c.addAtIndex(cfg, c.lastConfigIndex())
 }
 
-func (c *LayeredConfig) AddAtIndex(cfg DynamicConfig, index uint) uint {
+func (c *LayeredConfig) AddAtIndex(cfg DynamicConfig, index int) int {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	return c.addAtIndex(cfg, index)
 }
 
-func (c *LayeredConfig) addAtIndex(cfg DynamicConfig, index uint) uint {
+func (c *LayeredConfig) addAtIndex(cfg DynamicConfig, index int) int {
 	if index > c.lastConfigIndex() {
 		index = c.lastConfigIndex()
 	}
@@ -122,11 +122,11 @@ func (c *LayeredConfig) addAtIndex(cfg DynamicConfig, index uint) uint {
 	return index
 }
 
-func (c *LayeredConfig) lastConfigIndex() uint {
-	return uint(len(c.configList)) - 1
+func (c *LayeredConfig) lastConfigIndex() int {
+	return len(c.configList) - 1
 }
 
-func insert(configList []DynamicConfig, cfg DynamicConfig, index uint) []DynamicConfig {
+func insert(configList []DynamicConfig, cfg DynamicConfig, index int) []DynamicConfig {
 	configList = append(configList, nil)
 	copy(configList[index+1:], configList[index:])
 	configList[index] = cfg
