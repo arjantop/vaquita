@@ -26,8 +26,8 @@ func newDynamicProperty(name string) *DynamicProperty {
 		name:  name,
 		value: s,
 
-		parsedBoolProperty: newParsedBoolProperty(s, false),
-		parsedIntProperty:  newParsedIntProperty(s, 0),
+		parsedBoolProperty: newParsedBoolProperty(s),
+		parsedIntProperty:  newParsedIntProperty(s),
 	}
 }
 
@@ -95,20 +95,16 @@ func (p *DynamicProperty) clearParsedProperties() {
 }
 
 type parsedBoolProperty struct {
-	stringValue  *sharedString
-	parsed       bool
-	defaultValue bool
-	parsedValue  bool
-	err          error
-	lock         *sync.Mutex
+	stringValue *sharedString
+	parsed      bool
+	parsedValue bool
+	err         error
+	lock        sync.Mutex
 }
 
-func newParsedBoolProperty(v *sharedString, def bool) parsedBoolProperty {
+func newParsedBoolProperty(v *sharedString) parsedBoolProperty {
 	return parsedBoolProperty{
-		stringValue:  v,
-		defaultValue: def,
-		parsedValue:  def,
-		lock:         new(sync.Mutex),
+		stringValue: v,
 	}
 }
 
@@ -144,26 +140,21 @@ func (p *parsedBoolProperty) valueWithDefault(d bool) bool {
 func (p *parsedBoolProperty) clear() {
 	p.lock.Lock()
 	p.parsed = false
-	p.parsedValue = p.defaultValue
 	p.err = nil
 	p.lock.Unlock()
 }
 
 type parsedIntProperty struct {
-	stringValue  *sharedString
-	parsed       bool
-	defaultValue int
-	parsedValue  int
-	err          error
-	lock         *sync.Mutex
+	stringValue *sharedString
+	parsed      bool
+	parsedValue int
+	err         error
+	lock        sync.Mutex
 }
 
-func newParsedIntProperty(v *sharedString, def int) parsedIntProperty {
+func newParsedIntProperty(v *sharedString) parsedIntProperty {
 	return parsedIntProperty{
-		stringValue:  v,
-		defaultValue: def,
-		parsedValue:  def,
-		lock:         new(sync.Mutex),
+		stringValue: v,
 	}
 }
 
@@ -195,7 +186,6 @@ func (p *parsedIntProperty) valueWithDefault(d int) int {
 func (p *parsedIntProperty) clear() {
 	p.lock.Lock()
 	p.parsed = false
-	p.parsedValue = p.defaultValue
 	p.err = nil
 	p.lock.Unlock()
 }
@@ -203,13 +193,11 @@ func (p *parsedIntProperty) clear() {
 type sharedString struct {
 	value       *string
 	timeChanged time.Time
-	lock        *sync.RWMutex
+	lock        sync.RWMutex
 }
 
 func newSharedString() *sharedString {
-	return &sharedString{
-		lock: new(sync.RWMutex),
-	}
+	return &sharedString{}
 }
 
 func (s *sharedString) withValue(f func(**string)) {
