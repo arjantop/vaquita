@@ -114,7 +114,6 @@ func newParsedBoolProperty(v *sharedString, def bool) parsedBoolProperty {
 
 func (p *parsedBoolProperty) value() (bool, error) {
 	p.lock.Lock()
-	defer p.lock.Unlock()
 	if !p.parsed {
 		if s := p.stringValue.get(); s != nil {
 			if *s == "true" {
@@ -124,12 +123,14 @@ func (p *parsedBoolProperty) value() (bool, error) {
 			} else {
 				p.err = InvalidBoolValue
 			}
-			p.parsed = true
 		} else {
-			return p.parsedValue, NoValue
+			p.err = NoValue
 		}
+		p.parsed = true
 	}
-	return p.parsedValue, p.err
+	val, err := p.parsedValue, p.err
+	p.lock.Unlock()
+	return val, err
 }
 
 func (p *parsedBoolProperty) valueWithDefault(d bool) bool {
@@ -142,10 +143,10 @@ func (p *parsedBoolProperty) valueWithDefault(d bool) bool {
 
 func (p *parsedBoolProperty) clear() {
 	p.lock.Lock()
-	defer p.lock.Unlock()
 	p.parsed = false
 	p.parsedValue = p.defaultValue
 	p.err = nil
+	p.lock.Unlock()
 }
 
 type parsedIntProperty struct {
@@ -168,18 +169,19 @@ func newParsedIntProperty(v *sharedString, def int) parsedIntProperty {
 
 func (p *parsedIntProperty) value() (int, error) {
 	p.lock.Lock()
-	defer p.lock.Unlock()
 	if !p.parsed {
 		if s := p.stringValue.get(); s != nil {
 			r, err := strconv.ParseInt(*s, 0, 0)
 			p.parsedValue = int(r)
 			p.err = err
-			p.parsed = true
 		} else {
-			return p.parsedValue, NoValue
+			p.err = NoValue
 		}
+		p.parsed = true
 	}
-	return p.parsedValue, p.err
+	val, err := p.parsedValue, p.err
+	p.lock.Unlock()
+	return val, err
 }
 
 func (p *parsedIntProperty) valueWithDefault(d int) int {
@@ -192,10 +194,10 @@ func (p *parsedIntProperty) valueWithDefault(d int) int {
 
 func (p *parsedIntProperty) clear() {
 	p.lock.Lock()
-	defer p.lock.Unlock()
 	p.parsed = false
 	p.parsedValue = p.defaultValue
 	p.err = nil
+	p.lock.Unlock()
 }
 
 type sharedString struct {
@@ -212,22 +214,24 @@ func newSharedString() *sharedString {
 
 func (s *sharedString) withValue(f func(**string)) {
 	s.lock.Lock()
-	defer s.lock.Unlock()
 	prev := s.value
 	f(&s.value)
 	if prev != s.value {
 		s.timeChanged = time.Now()
 	}
+	s.lock.Unlock()
 }
 
 func (s *sharedString) lastTimeChanged() time.Time {
 	s.lock.RLock()
-	defer s.lock.RUnlock()
-	return s.timeChanged
+	t := s.timeChanged
+	s.lock.RUnlock()
+	return t
 }
 
 func (s *sharedString) get() *string {
 	s.lock.RLock()
-	defer s.lock.RUnlock()
-	return s.value
+	v := s.value
+	s.lock.RUnlock()
+	return v
 }
