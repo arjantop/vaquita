@@ -68,3 +68,17 @@ func TestPropertyClear(t *testing.T) {
 	p.clear()
 	assert.Equal(t, "foo", p.stringValueWithDefault("foo"))
 }
+
+func BenchmarkDynamicPropertyBool(b *testing.B) {
+	p := newDynamicProperty("")
+	for i := 0; i < b.N; i++ {
+		p.boolValueWithDefault(false)
+	}
+}
+
+func BenchmarkDynamicPropertyInt(b *testing.B) {
+	p := newDynamicProperty("")
+	for i := 0; i < b.N; i++ {
+		p.intValueWithDefault(0)
+	}
+}
